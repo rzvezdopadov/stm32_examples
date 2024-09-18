@@ -12,8 +12,8 @@
 int  isDebugOn (void);															// Проверка настроен ли Debug
 void debugInit(void); 															// Инициализация тактирования
 void debugSendStr(uint8_t *addr);										// Отправка строки
-void printfArray(uint8_t *addr, uint16_t count);		// Вывод данных в шестнадцатеричной форме
-void printfArray32(uint32_t *addr, uint16_t count);
+void printfArray(uint8_t *addr, uint32_t count);		// Вывод данных в шестнадцатеричной форме
+void printfArray32(uint32_t *addr, uint32_t count);
 void testPinChange(void);														// Тестовый пин PC9
 
 #endif 

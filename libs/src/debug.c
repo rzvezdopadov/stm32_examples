@@ -51,20 +51,20 @@ void debugSendStr(uint8_t *addr) {					// Функция передачи дан
 	}
 }
 
-void printfArray(uint8_t *addr, uint16_t count) {	// Функция вывода данных в HEX форме
+void printfArray(uint8_t *addr, uint32_t count) {	// Функция вывода данных в HEX форме
 	if (count < 1) return;
 	
-	for (uint16_t i=0; i<count; i++) {
+	for (uint32_t i=0; i<count; i++) {
 		if (!(i%16) & (i != 0)) printf("\n");
 		printf("%02X ", addr[i]);
 	}
 	printf("\n--------------------------\n");
 }
 
-void printfArray32(uint32_t *addr, uint16_t count) {	// Функция вывода данных в HEX форме 32 битных чисел
+void printfArray32(uint32_t *addr, uint32_t count) {	// Функция вывода данных в HEX форме 32 битных чисел
 	if (count < 1) return;
 	
-	for (uint16_t i=0; i<count; i++) {
+	for (uint32_t i=0; i<count; i++) {
 		if (!(i%4) & (i != 0)) printf("\n");
 		printf("%08X ", addr[i]);
 	}

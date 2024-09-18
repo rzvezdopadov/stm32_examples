@@ -335,8 +335,8 @@ enum MB_ERR modbusWSRandDKey( // Write single register
 	uint32_t mbKey1 = (buf->rx[mbKey1Bias] << 24) | (buf->rx[mbKey1Bias + 1] << 16) | (buf->rx[mbKey1Bias + 2] << 8) | buf->rx[mbKey1Bias + 3];
 	uint8_t mbKey2Bias = 8;
 	uint32_t mbKey2 = (buf->rx[mbKey2Bias] << 24) | (buf->rx[mbKey2Bias + 1] << 16) | (buf->rx[mbKey2Bias + 2] << 8) | buf->rx[mbKey2Bias + 3];  
-	uint16_t data = (buf->rx[8] << 8) | buf->rx[9]; 																		// Пришедший байт данных	
-	
+	uint16_t data = (buf->rx[12] << 8) | buf->rx[13]; 																		// Пришедший байт данных	
+
 	if (!((startAddr >= minAddrMB) && (startAddr <= maxAddrMB))) return MB_ERR_IDA; 		// Если адрес вне диапазона выход
 	if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
 	if ((mbKey1 != key1) || (mbKey2 != key2)) {																					// Если ключи управления не подошли, выход
@@ -367,14 +367,18 @@ enum MB_ERR modbusWMRandDKey( // Write multiple register and key
 	uint32_t mbKey1 = (buf->rx[mbKey1Bias] << 24) | (buf->rx[mbKey1Bias + 1] << 16) | (buf->rx[mbKey1Bias + 2] << 8) | buf->rx[mbKey1Bias + 3];
 	uint8_t mbKey2Bias = 11;
 	uint32_t mbKey2 = (buf->rx[mbKey2Bias] << 24) | (buf->rx[mbKey2Bias + 1] << 16) | (buf->rx[mbKey2Bias + 2] << 8) | buf->rx[mbKey2Bias + 3];  
-	
-	if (!((head.startAddr >= minAddrMB) && (head.startAddr <= maxAddrMB))) return MB_ERR_IDA; 			// Если адрес вне диапазона выход
+
+	if (!((head.startAddr >= minAddrMB) && (head.startAddr <= maxAddrMB)))  return MB_ERR_IDA; 			// Если адрес вне диапазона выход
 	if (head.biasStartAddr + head.sizeData > ((maxAddrMB - minAddrMB) + 1)) return MB_ERR_IDA; 			// Если количество запрашиваемых данных выходит за пределы, выход
-	if ((mbKey1 != key1) || (mbKey2 != key2)) {																					// Если ключи управления не подошли, выход
+	if ((mbKey1 != key1) || (mbKey2 != key2)) {																											// Если ключи управления не подошли, выход
 		if (clbkKeyErr) clbkKeyErr();
 		
 		return MB_ERR_IF;
-	} 	
+	}
+	
+	uint16_t startAddr = (buf->rx[2] << 8) + buf->rx[3];																// Вытаскиваем желаемый адрес начала данных 
+	uint16_t biasStartAddr = startAddr - minAddrMB; 																		// Приводим к базовому смещению 	
+	t_MB_HoldingAcceptRange *acceptRangeLocal = acceptRange + biasStartAddr;
 	
 	for (uint16_t i=0; i<head.sizeData; i++) { 																											// Проверка допустимых величин
 		uint16_t data = (buf->rx[15 + i * 2] << 8) | buf->rx[16 + i * 2]; 														// Пришедший байт данных

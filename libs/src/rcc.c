@@ -4,6 +4,7 @@
 
 void rccInit(void) { // Инициализация тактирования
 	clearCPU();												// Отключение всей периферии
+	_delay_ms(100);
 	// Включение акселератора памяти Flash(максимальные циклы чтения памяти)
 	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_LATENCY;
 		

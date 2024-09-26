@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include "stdint.h"
 
-#define MB_Size_Buffer 300
+#define MB_Size_Buffer 1000
 
 // Нумератор функциональных кодов MODBUS
 enum {
@@ -59,6 +59,7 @@ void modbusAddBytesToTxBuffer(t_MB_Buf *buf, uint8_t *addr, uint16_t byteCount);
 void modbusAddWordToTxBuffer(t_MB_Buf *buf, uint16_t *addr, uint16_t wordCount);
 void modbusCalcCRCandAddToBuf(t_MB_Buf *buf);
 void modbusAddWordToCore(uint16_t *addrCore, uint16_t *addrModbus, uint16_t wordCount);
+void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high);
 enum MB_ERR modbusRMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, void clbk(void));
 enum MB_ERR modbusWSR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));
 enum MB_ERR modbusWMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));

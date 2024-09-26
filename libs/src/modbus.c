@@ -125,6 +125,11 @@ t_MB_head_character modbusGetHeadCharacter(uint8_t *buf, uint16_t minAddrMB) {
 	return head;
 }
 
+void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high) {
+	reg->lowValue  = low;
+	reg->highValue = high;
+}
+
 enum MB_ERR modbusRMR( // Read multiple register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, void clbk(void)
 ) {	// Функция отдачи данных Modbus

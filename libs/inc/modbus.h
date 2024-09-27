@@ -31,9 +31,15 @@ enum MB_ERR {
 	MB_ERR_MPE  = 0x08  // Memory Parity Error — Ведомое устройство при чтении расширенной памяти обнаружило ошибку паритета.
 };
 
+typedef enum { 									// Enum флаги положительного или отрицательного числа
+	MB_FLAG_SIGNED, 
+	MB_FLAG_UNSIGNED, 
+} MB_SIUNS_FLAGS;
+
 typedef struct {								// Диапапзоны для MODBUS Write
 	int32_t			lowValue;					// Нижний предел
 	int32_t			highValue;				// Высокий предел
+	uint16_t		siunsFlag;				// Отрицательное или положительное число
 } t_MB_HoldingAcceptRange;
 
 typedef struct {								// Буферы передачи данных
@@ -59,7 +65,7 @@ void modbusAddBytesToTxBuffer(t_MB_Buf *buf, uint8_t *addr, uint16_t byteCount);
 void modbusAddWordToTxBuffer(t_MB_Buf *buf, uint16_t *addr, uint16_t wordCount);
 void modbusCalcCRCandAddToBuf(t_MB_Buf *buf);
 void modbusAddWordToCore(uint16_t *addrCore, uint16_t *addrModbus, uint16_t wordCount);
-void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high);
+void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high, uint16_t siunsFlag);
 enum MB_ERR modbusRMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, void clbk(void));
 enum MB_ERR modbusWSR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));
 enum MB_ERR modbusWMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));

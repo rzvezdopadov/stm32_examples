@@ -125,9 +125,10 @@ t_MB_head_character modbusGetHeadCharacter(uint8_t *buf, uint16_t minAddrMB) {
 	return head;
 }
 
-void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high) {
+void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high, uint16_t siunsFlag) {
 	reg->lowValue  = low;
 	reg->highValue = high;
+	reg->siunsFlag = siunsFlag;
 }
 
 enum MB_ERR modbusRMR( // Read multiple register
@@ -156,12 +157,19 @@ enum MB_ERR modbusWSR( // Write single register
 ) {	// Функция отдачи данных Modbus	
 	uint16_t startAddr = (buf->rx[2] << 8) + buf->rx[3];																	// Вытаскиваем желаемый адрес начала данных 
 	uint16_t biasStartAddr = startAddr - minAddrMB; 																		// Приводим к базовому смещению
-	uint16_t data = (buf->rx[4] << 8) | buf->rx[5]; 	// Пришедший байт данных	
 	t_MB_HoldingAcceptRange *acceptRangeLocal = acceptRange + biasStartAddr;
 	
 	if (!((startAddr >= minAddrMB) && (startAddr <= maxAddrMB))) return MB_ERR_IDA; 		// Если адрес вне диапазона выход
-	if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
-
+	if (acceptRangeLocal->siunsFlag == MB_FLAG_SIGNED) {
+		int16_t data = (buf->rx[4] << 8) | buf->rx[5]; 	// Пришедший байт данных
+		
+		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	} else {
+		uint16_t data = (buf->rx[4] << 8) | buf->rx[5]; 	// Пришедший байт данных
+		
+		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	}
+	
 	uint16_t *startAddrOnCore = (uint16_t *)addrDataOnCore + biasStartAddr;
 	uint16_t *value = (uint16_t *)&buf->rx[4];
 	
@@ -183,11 +191,18 @@ enum MB_ERR modbusWMR( // Write multiple register
 	if (!((head.startAddr >= minAddrMB) && (head.startAddr <= maxAddrMB))) return MB_ERR_IDA; 		// Если адрес вне диапазона выход
 	if (head.biasStartAddr + head.sizeData > ((maxAddrMB - minAddrMB) + 1)) return MB_ERR_IDA; 		// Если количество запрашиваемых данных выходит за пределы, выход
 	
-	for (uint16_t i=0; i<head.sizeData; i++) { 																							// Проверка допустимых величин
-		uint16_t data = (buf->rx[7 + i * 2] << 8) | buf->rx[8 + i * 2]; 										// Пришедший байт данных
+	for (uint16_t i=0; i<head.sizeData; i++) { 																										// Проверка допустимых величин
 		t_MB_HoldingAcceptRange *acceptRangeLocal = acceptRange + head.biasStartAddr + i;
 		
-		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		if (acceptRangeLocal->siunsFlag == MB_FLAG_SIGNED) {
+			int16_t data = (buf->rx[7 + i * 2] << 8) | buf->rx[8 + i * 2]; 													// Пришедший байт данных
+		
+			if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		} else {
+			uint16_t data = (buf->rx[7 + i * 2] << 8) | buf->rx[8 + i * 2]; 										// Пришедший байт данных
+		
+			if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		}
 	}
 			
 	uint16_t *data = (uint16_t *)&buf->rx[7];
@@ -240,10 +255,17 @@ enum MB_ERR modbusWSRandKey( // Write single register
 	t_MB_HoldingAcceptRange *acceptRangeLocal = acceptRange + biasStartAddr;
 	uint8_t  mbKeyBias = 4;
 	uint32_t mbKey = (buf->rx[mbKeyBias] << 24) | (buf->rx[mbKeyBias + 1] << 16) | (buf->rx[mbKeyBias + 2] << 8) | buf->rx[mbKeyBias + 3];  
-	uint16_t data = (buf->rx[8] << 8) | buf->rx[9]; 	// Пришедший байт данных	
 	
 	if (!((startAddr >= minAddrMB) && (startAddr <= maxAddrMB))) return MB_ERR_IDA; 		// Если адрес вне диапазона выход
-	if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	if (acceptRangeLocal->siunsFlag == MB_FLAG_SIGNED) {
+		int16_t data = (buf->rx[8] << 8) | buf->rx[9]; 	// Пришедший байт данных
+		
+		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	} else {
+		uint16_t data = (buf->rx[8] << 8) | buf->rx[9]; 	// Пришедший байт данных
+		
+		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	}
 	if (mbKey != key) {																																	// Если ключи управления не подошли, выход
 		if (clbkKeyErr) clbkKeyErr();
 		
@@ -280,10 +302,18 @@ enum MB_ERR modbusWMRandKey( // Write multiple register and key
 	}
 		
 	for (uint16_t i=0; i<head.sizeData; i++) { 																											// Проверка допустимых величин
-		uint16_t data = (buf->rx[11 + i * 2] << 8) | buf->rx[12 + i * 2]; 														// Пришедший байт данных
+		
 		t_MB_HoldingAcceptRange *acceptRangeLocal = acceptRange + head.biasStartAddr + i;
 		
-		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		if (acceptRangeLocal->siunsFlag == MB_FLAG_SIGNED) {
+			int16_t data = (buf->rx[11 + i * 2] << 8) | buf->rx[12 + i * 2]; 													// Пришедший байт данных
+		
+			if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		} else {
+			uint16_t data = (buf->rx[11 + i * 2] << 8) | buf->rx[12 + i * 2]; 										// Пришедший байт данных
+		
+			if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		}
 	}
 			
 	uint16_t *data = (uint16_t *)&buf->rx[11];
@@ -340,10 +370,17 @@ enum MB_ERR modbusWSRandDKey( // Write single register
 	uint32_t mbKey1 = (buf->rx[mbKey1Bias] << 24) | (buf->rx[mbKey1Bias + 1] << 16) | (buf->rx[mbKey1Bias + 2] << 8) | buf->rx[mbKey1Bias + 3];
 	uint8_t mbKey2Bias = 8;
 	uint32_t mbKey2 = (buf->rx[mbKey2Bias] << 24) | (buf->rx[mbKey2Bias + 1] << 16) | (buf->rx[mbKey2Bias + 2] << 8) | buf->rx[mbKey2Bias + 3];  
-	uint16_t data = (buf->rx[12] << 8) | buf->rx[13]; 																		// Пришедший байт данных	
 
 	if (!((startAddr >= minAddrMB) && (startAddr <= maxAddrMB))) return MB_ERR_IDA; 		// Если адрес вне диапазона выход
-	if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	if (acceptRangeLocal->siunsFlag == MB_FLAG_SIGNED) {
+		int16_t data = (buf->rx[12] << 8) | buf->rx[13]; 	// Пришедший байт данных
+		
+		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	} else {
+		uint16_t data = (buf->rx[12] << 8) | buf->rx[13]; 	// Пришедший байт данных
+		
+		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+	}
 	if ((mbKey1 != key1) || (mbKey2 != key2)) {																					// Если ключи управления не подошли, выход
 		if (clbkKeyErr) clbkKeyErr();
 		
@@ -386,10 +423,17 @@ enum MB_ERR modbusWMRandDKey( // Write multiple register and key
 	t_MB_HoldingAcceptRange *acceptRangeLocal = acceptRange + biasStartAddr;
 	
 	for (uint16_t i=0; i<head.sizeData; i++) { 																											// Проверка допустимых величин
-		uint16_t data = (buf->rx[15 + i * 2] << 8) | buf->rx[16 + i * 2]; 														// Пришедший байт данных
 		t_MB_HoldingAcceptRange *acceptRangeLocal = acceptRange + head.biasStartAddr + i;
 		
-		if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		if (acceptRangeLocal->siunsFlag == MB_FLAG_SIGNED) {
+			int16_t data = (buf->rx[15 + i * 2] << 8) | buf->rx[16 + i * 2]; 													// Пришедший байт данных
+		
+			if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		} else {
+			uint16_t data = (buf->rx[15 + i * 2] << 8) | buf->rx[16 + i * 2]; 										// Пришедший байт данных
+		
+			if ((acceptRangeLocal->lowValue > data) || (data > acceptRangeLocal->highValue)) return MB_ERR_IDV; // Проверка допустимых величин
+		}
 	}
 			
 	uint16_t *data = (uint16_t *)&buf->rx[15];

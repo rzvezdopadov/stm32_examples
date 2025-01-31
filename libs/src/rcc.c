@@ -2,49 +2,46 @@
 
 // #define INTERNAL_CLOCK // Если внутренняя RC цепочка
 
-void rccInit(void) { // Инициализация тактирования
-	clearCPU();												// Отключение всей периферии
+void rccInit(void) {
 	_delay_ms(100);
-	// Включение акселератора памяти Flash(максимальные циклы чтения памяти)
-	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_LATENCY;
-		
-#ifndef INTERNAL_CLOCK
-///////// Для внешнего кварца v
-// Изменение веток тактирования на внешний кварц
-	RCC->CR = RCC_CR_HSEON; // Переключаем на внешний	 кварц
-	while(!(RCC->CR & RCC_CR_HSERDY)){} // Ожидаем, пока не переключится
+	clearCPU();  // Отключение всей периферии
+	_delay_ms(100);
 
-// Раскачка умножителей PLL
-	RCC->PLLCFGR = (4 << RCC_PLLCFGR_PLLM_Pos)
-								| (180 << RCC_PLLCFGR_PLLN_Pos)
-								 | (0 << RCC_PLLCFGR_PLLP_Pos)
-									| (7 << RCC_PLLCFGR_PLLQ_Pos)
-										| (2 << RCC_PLLCFGR_PLLR_Pos)
-											| RCC_PLLCFGR_PLLSRC_HSE
-	;
-///////// Для внешнего кварца ^
+	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_LATENCY;
+
+#ifndef INTERNAL_CLOCK
+	// Включение HSE
+	RCC->CR |= RCC_CR_HSEON;
+	while (!(RCC->CR & RCC_CR_HSERDY));
+
+	// Настройка PLL для внешнего кварца
+	RCC->PLLCFGR = (4 << RCC_PLLCFGR_PLLM_Pos) |
+								 ((F_CPU / 1000000) << RCC_PLLCFGR_PLLN_Pos) |
+								 (0 << RCC_PLLCFGR_PLLP_Pos) |  // PLLP = 2
+								 (7 << RCC_PLLCFGR_PLLQ_Pos) |
+								 RCC_PLLCFGR_PLLSRC_HSE;
 #else
-/////// Для внутренней RC цепочки (16 Мгц) v		
-	RCC->CR = RCC_CR_HSION; // Переключаем на внешний	 кварц
-	while(!(RCC->CR & RCC_CR_HSIRDY)){} // Ожидаем, пока не переключится	
-	
-// Раскачка умножителей PLL
-	RCC->PLLCFGR = (8 << RCC_PLLCFGR_PLLM_Pos)
-								| (180 << RCC_PLLCFGR_PLLN_Pos)
-								 | (0 << RCC_PLLCFGR_PLLP_Pos)
-									| (7 << RCC_PLLCFGR_PLLQ_Pos)
-									 | (2 << RCC_PLLCFGR_PLLR_Pos)
-										| RCC_PLLCFGR_PLLSRC_HSI
-	;	
-/////// Для внутренней RC цепочки ^
-#endif		
-		
-// Поднимаем до 168 МГц
-	RCC->CR |= RCC_CR_PLLON; // Включаем PLL
-	while(!(RCC->CR & RCC_CR_PLLRDY)){} // Ожидаем, пока не включится
-	
-	RCC->CFGR |= RCC_CFGR_PPRE1_DIV4 | RCC_CFGR_PPRE2_DIV2; // Включаем делители частоты периферийных шин
-	
-	RCC->CFGR |= RCC_CFGR_SW_PLL;							
-	while(!(RCC->CFGR & RCC_CFGR_SWS_PLL)){}
+	// Включение HSI
+	RCC->CR |= RCC_CR_HSION;
+	while (!(RCC->CR & RCC_CR_HSIRDY));
+
+	// Настройка PLL для внутреннего RC-генератора
+	RCC->PLLCFGR = (8 << RCC_PLLCFGR_PLLM_Pos) |
+								 (F_CPU / 1000000 << RCC_PLLCFGR_PLLN_Pos) |
+								 (0 << RCC_PLLCFGR_PLLP_Pos) |  // PLLP = 2
+								 (7 << RCC_PLLCFGR_PLLQ_Pos) |
+								 RCC_PLLCFGR_PLLSRC_HSI;
+#endif
+
+	// Включение PLL
+	RCC->CR |= RCC_CR_PLLON;
+	while (!(RCC->CR & RCC_CR_PLLRDY));
+
+	// Переключение SYSCLK на PLL
+	RCC->CFGR = (RCC->CFGR & ~RCC_CFGR_SW) | RCC_CFGR_SW_PLL;
+	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
+
+	// Настройка делителей для периферийных шин
+	RCC->CFGR = (RCC->CFGR & ~(RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2)) |
+							RCC_CFGR_PPRE1_DIV4 | RCC_CFGR_PPRE2_DIV2;
 }

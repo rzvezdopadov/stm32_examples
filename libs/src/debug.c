@@ -3,7 +3,7 @@
 // Отладка на USART1
 // PA10 - RX (Не используется), PA9 - TX
 #define debugBaud 1000000 // Битрейт отладки
-#define debugBRR ((90000000 + debugBaud / 2) / debugBaud)
+#define debugBRR (((F_CPU / 2) + (debugBaud / 2)) / debugBaud)
 
 int isDebugOn (void) {	// Проверка настроен ли Debug
 	if (
@@ -23,7 +23,7 @@ void debugInit(void) { // Инициализация отладки
 	GPIOA->MODER |= GPIO_MODER_MODE9_1
 //								| GPIO_MODER_MODE10_1
 	;
-	GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED9_Msk 
+	GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED9_Msk
 //										| GPIO_OSPEEDR_OSPEED10_Msk
 	;
 // Настройки
@@ -31,10 +31,10 @@ void debugInit(void) { // Инициализация отладки
 	USART1->BRR = debugBRR;
 	USART1->CR1 |= USART_CR1_UE | USART_CR1_TE;
 	
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
-	GPIOC->MODER 	 |= GPIO_MODER_MODE9_0;
-	GPIOC->OSPEEDR |= GPIO_OSPEEDR_OSPEED9_Msk;
-	printf("\n\n----------Debug init Ok!----------\n");
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
+	GPIOE->MODER 	 |= GPIO_MODER_MODE6_0;
+	GPIOE->OSPEEDR |= GPIO_OSPEEDR_OSPEED6_Msk;
+	printf("\n\n---------- Debug bootloader init Ok! Freeq = %dMHz, Brr = %d ----------\n", F_CPU / 1000000, debugBRR);
 }
 
 int fputc(int ch, FILE *f) {
@@ -45,9 +45,13 @@ int fputc(int ch, FILE *f) {
 void debugSendStr(uint8_t *addr) {					// Функция передачи данных побайтно до символа 0x00
 	if (!isDebugOn()) return;
 	
+	uint32_t count = 0; 
+	
 	while (*addr) {
 		USART1->DR = *addr++;										// Отправляем очередной байт
-		while(!(USART1->SR & USART_SR_TXE)) {}	// Ожидаем сброса флага окончания передачи данных
+		while(!(USART1->SR & USART_SR_TXE)) {
+			if (count++ > 100000) return;
+		}	// Ожидаем сброса флага окончания передачи данных
 	}
 }
 
@@ -72,7 +76,7 @@ void printfArray32(uint32_t *addr, uint32_t count) {	// Функция выво�
 }
 
 void testPinChange(void) {
-	if (GPIOC->ODR & GPIO_ODR_OD9) { 
+	if (GPIOE->ODR & GPIO_ODR_OD6) { 
 		testPinOff;
 	} else {
 		testPinOn; 

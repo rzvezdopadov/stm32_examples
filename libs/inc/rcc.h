@@ -1,7 +1,5 @@
-#ifndef  __RCC_H
+#ifndef __RCC_H
 #define __RCC_H
-
-#include "main.h"
 
 void rccInit(void); // Инициализация тактирования
 

@@ -1,4 +1,7 @@
 #include "modbus.h"
+ 
+// Функции расчета контрольных сумм Modbus
+#define modbusPolynom 0xA001
 
 /*Table of CRC values for high-order byte*/
 static unsigned char auchCRCHi[] = {
@@ -38,9 +41,7 @@ static unsigned char auchCRCLo[] = {
 	0x88,0x48,0x49,0x89,0x4B,0x8B,0x8A,0x4A,0x4E,0x8E,0x8F,0x4F,0x8D,0x4D,0x4C,0x8C,
 	0x44,0x84,0x85,0x45,0x87,0x47,0x46,0x86,0x82,0x42,0x43,0x83,0x41,0x81,0x80,0x40
 };
- 
-// Функции расчета контрольных сумм Modbus
-#define modbusPolynom 0xA001
+
 // Проверяет контрольные суммы, возвращает 1, если суммы верны
 uint8_t modbusTestCRC(uint8_t *addr, uint32_t sizeArray) {
 	if (sizeArray < 2) return 0;
@@ -131,7 +132,7 @@ void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high, u
 	reg->siunsFlag = siunsFlag;
 }
 
-enum MB_ERR modbusRMR( // Read multiple register
+MB_ERR modbusRMR( // Read multiple register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, void clbk(void)
 ) {	// Функция отдачи данных Modbus
 	t_MB_head_character head = modbusGetHeadCharacter(&buf->rx[2], minAddrMB);
@@ -148,10 +149,10 @@ enum MB_ERR modbusRMR( // Read multiple register
 	
 	if (clbk) clbk();
 	
-	return MB_OK;
+	return MB_ERR_OK;
 }
 
-enum MB_ERR modbusWSR( // Write single register
+MB_ERR modbusWSR( // Write single register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, 
 		t_MB_HoldingAcceptRange *acceptRange, void clbk(void)
 ) {	// Функция отдачи данных Modbus	
@@ -179,10 +180,10 @@ enum MB_ERR modbusWSR( // Write single register
 	
 	if (clbk) clbk();
 		
-	return MB_OK;									
+	return MB_ERR_OK;									
 }
 
-enum MB_ERR modbusWMR( // Write multiple register
+MB_ERR modbusWMR( // Write multiple register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, 
 		t_MB_HoldingAcceptRange *acceptRange, void clbk(void)
 ) {	// Функция отдачи данных Modbus
@@ -215,11 +216,11 @@ enum MB_ERR modbusWMR( // Write multiple register
 
 	if (clbk) clbk();
 	
-	return MB_OK;
+	return MB_ERR_OK;
 }
 
 //////////////////// С ключом управления
-enum MB_ERR modbusRMRandKey( // Read multiple register
+MB_ERR modbusRMRandKey( // Read multiple register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, uint32_t key, void clbk(void), void clbkKeyErr(void)
 ) {	// Функция отдачи данных Modbus
 	t_MB_head_character head = modbusGetHeadCharacter(&buf->rx[2], minAddrMB);
@@ -243,10 +244,10 @@ enum MB_ERR modbusRMRandKey( // Read multiple register
 	
 	if (clbk) clbk();
 		
-	return MB_OK;
+	return MB_ERR_OK;
 }
 
-enum MB_ERR modbusWSRandKey( // Write single register
+MB_ERR modbusWSRandKey( // Write single register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, 
 		t_MB_HoldingAcceptRange *acceptRange, uint32_t key, void clbk(void), void clbkKeyErr(void)
 ) {	// Функция отдачи данных Modbus	
@@ -282,10 +283,10 @@ enum MB_ERR modbusWSRandKey( // Write single register
 	
 	if (clbk) clbk();
 	
-	return MB_OK;									
+	return MB_ERR_OK;									
 }
 
-enum MB_ERR modbusWMRandKey( // Write multiple register and key
+MB_ERR modbusWMRandKey( // Write multiple register and key
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, 
 		t_MB_HoldingAcceptRange *acceptRange, uint32_t key, void clbk(void), void clbkKeyErr(void)
 ) {	// Функция отдачи данных Modbus
@@ -326,11 +327,11 @@ enum MB_ERR modbusWMRandKey( // Write multiple register and key
 
 	if (clbk) clbk();
 	
-	return MB_OK;
+	return MB_ERR_OK;
 }
 
 //////////////////// С ключом управления и ключом регулировщика
-enum MB_ERR modbusRMRandDKey( // Read multiple register
+MB_ERR modbusRMRandDKey( // Read multiple register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void)
 ) {	// Функция отдачи данных Modbus
 	t_MB_head_character head = modbusGetHeadCharacter(&buf->rx[2], minAddrMB);
@@ -356,10 +357,10 @@ enum MB_ERR modbusRMRandDKey( // Read multiple register
 	
 	if (clbk) clbk();
 	
-	return MB_OK;
+	return MB_ERR_OK;
 }
 
-enum MB_ERR modbusWSRandDKey( // Write single register
+MB_ERR modbusWSRandDKey( // Write single register
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, 
 		t_MB_HoldingAcceptRange *acceptRange, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void)
 ) {	// Функция отдачи данных Modbus	
@@ -397,10 +398,10 @@ enum MB_ERR modbusWSRandDKey( // Write single register
 	
 	if (clbk) clbk();
 		
-	return MB_OK;									
+	return MB_ERR_OK;									
 }
 
-enum MB_ERR modbusWMRandDKey( // Write multiple register and key
+MB_ERR modbusWMRandDKey( // Write multiple register and key
 	t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, 
 		t_MB_HoldingAcceptRange *acceptRange, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void)
 ) {	// Функция отдачи данных Modbus
@@ -446,5 +447,5 @@ enum MB_ERR modbusWMRandDKey( // Write multiple register and key
 
 	if (clbk) clbk();
 	
-	return MB_OK;
+	return MB_ERR_OK;
 }

@@ -1,13 +1,12 @@
 #ifndef  __MODBUS_H
 #define __MODBUS_H
 
-#include "stdio.h"
 #include "stdint.h"
 
 #define MB_Size_Buffer 1000
 
 // Нумератор функциональных кодов MODBUS
-enum {
+typedef enum {
 	MB_FC_RC   = 0x01, //		Read Coils Status(0x01)
 	MB_FC_RHR  = 0x03, //		Read Holding Registers (0x03)
 	MB_FC_RIR  = 0x04, //		Read Input Registers (0x04)
@@ -16,11 +15,11 @@ enum {
 	MB_FC_WMC  = 0x0F, //		Write Multiple Coils (0x0F)
 	MB_FC_WMR  = 0x10, //		Write Multiple Registers (0x10)
 	MB_FC_EM   = 0x80, //		Error Mask (0x80)
-};
+} MB_FC;
 
 // Стандартные MODBUS коды ошибок
-enum MB_ERR {
-	MB_OK   		= 0x00, // Запрос прошел
+typedef enum {
+	MB_ERR_OK   = 0x00, // Запрос прошел
 	MB_ERR_IF   = 0x01, // Illegal Function — Принятый код функции не может быть обработан.
 	MB_ERR_IDA  = 0x02, // Illegal Data Address — Адрес данных, указанный в запросе, недоступен.
 	MB_ERR_IDV  = 0x03, // Illegal Data Value — Значение, содержащееся в поле данных запроса, является недопустимой величиной.
@@ -29,12 +28,12 @@ enum MB_ERR {
 	MB_ERR_SDB  = 0x06, // Slave Device Busy — Ведомое устройство занято обработкой команды. Ведущее устройство должно повторить сообщение позже, когда ведомое освободится.
 	MB_ERR_NACK = 0x07, // Negative Acknowledge — Ведомое устройство не может выполнить программную функцию, заданную в запросе.
 	MB_ERR_MPE  = 0x08  // Memory Parity Error — Ведомое устройство при чтении расширенной памяти обнаружило ошибку паритета.
-};
+} MB_ERR;
 
 typedef enum { 									// Enum флаги положительного или отрицательного числа
 	MB_FLAG_SIGNED, 
 	MB_FLAG_UNSIGNED, 
-} MB_SIUNS_FLAGS;
+} MB_FLAGS_SIUNS;
 
 typedef struct {								// Диапапзоны для MODBUS Write
 	int32_t			lowValue;					// Нижний предел
@@ -66,14 +65,14 @@ void modbusAddWordToTxBuffer(t_MB_Buf *buf, uint16_t *addr, uint16_t wordCount);
 void modbusCalcCRCandAddToBuf(t_MB_Buf *buf);
 void modbusAddWordToCore(uint16_t *addrCore, uint16_t *addrModbus, uint16_t wordCount);
 void modbusAddLowHigh(t_MB_HoldingAcceptRange *reg, int32_t low, int32_t high, uint16_t siunsFlag);
-enum MB_ERR modbusRMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, void clbk(void));
-enum MB_ERR modbusWSR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));
-enum MB_ERR modbusWMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));
-enum MB_ERR modbusRMRandKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, uint32_t key, void clbk(void), void clbkKeyErr(void));
-enum MB_ERR modbusWSRandKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key, void clbk(void), void clbkKeyErr(void));
-enum MB_ERR modbusWMRandKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key, void clbk(void), void clbkKeyErr(void));
-enum MB_ERR modbusRMRandDKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void));
-enum MB_ERR modbusWSRandDKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void));
-enum MB_ERR modbusWMRandDKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void));
+MB_ERR modbusRMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, void clbk(void));
+MB_ERR modbusWSR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));
+MB_ERR modbusWMR(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, void clbk(void));
+MB_ERR modbusRMRandKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, uint32_t key, void clbk(void), void clbkKeyErr(void));
+MB_ERR modbusWSRandKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key, void clbk(void), void clbkKeyErr(void));
+MB_ERR modbusWMRandKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key, void clbk(void), void clbkKeyErr(void));
+MB_ERR modbusRMRandDKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void));
+MB_ERR modbusWSRandDKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void));
+MB_ERR modbusWMRandDKey(t_MB_Buf *buf, uint16_t minAddrMB, uint16_t maxAddrMB, uint8_t *addrDataOnCore, t_MB_HoldingAcceptRange *acceptRange, uint32_t key1, uint32_t key2, void clbk(void), void clbkKeyErr(void));
 
 #endif 

@@ -1,4 +1,5 @@
 #include "flash.h"
+#include "stm32f4xx.h"
 
 void flashUnlock(void) {																		// Разблокировка Flash памяти для записи
 	while ((FLASH->SR & FLASH_SR_BSY) != 0);	

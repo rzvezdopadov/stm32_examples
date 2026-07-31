@@ -1,4 +1,8 @@
 #include "rcc.h"
+#include "stm32f4xx.h"
+#include "config.h"
+#include "delay.h"
+#include "clear.h"
 
 // #define INTERNAL_CLOCK // Если внутренняя RC цепочка
 

@@ -1,7 +1,8 @@
 #include "criticalinterrupt.h"
+#include "stm32f4xx.h"
+#include <stdio.h>
 
 // Критические прерывания
-
 void criticalInterruptInit(void) {
 	printf("Critical interrupt init start!\n");
 	printf("Critical interrupt init Ok!\n");

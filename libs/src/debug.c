@@ -1,4 +1,7 @@
 #include "debug.h"
+#include <stdio.h>
+#include <stm32f4xx.h>
+#include "config.h"
 
 // Отладка на USART1
 // PA10 - RX (Не используется), PA9 - TX
@@ -14,28 +17,31 @@ int isDebugOn (void) {	// Проверка настроен ли Debug
 	return 0;
 }
 
-void debugInit(void) { // Инициализация отладки
-	// Альтернативная функция порта
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-	GPIOA->AFR[1] |= GPIO_AFRH_AFSEL9_0 | GPIO_AFRH_AFSEL9_1 | GPIO_AFRH_AFSEL9_2 
-//									|	GPIO_AFRH_AFSEL10_0 | GPIO_AFRH_AFSEL10_1 | GPIO_AFRH_AFSEL10_2
-	;
-	GPIOA->MODER |= GPIO_MODER_MODE9_1
-//								| GPIO_MODER_MODE10_1
-	;
-	GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED9_Msk
-//										| GPIO_OSPEEDR_OSPEED10_Msk
-	;
-// Настройки
+void debug_GPIOInit(void) {
+	RCC->AHB1ENR 	 |= RCC_AHB1ENR_GPIOAEN;
+	GPIOA->AFR[1]  |= (7<<GPIO_AFRH_AFSEL9_Pos);
+	GPIOA->MODER 	 |= GPIO_MODER_MODE9_1;
+	GPIOA->OSPEEDR |= GPIO_OSPEEDR_OSPEED9_Msk;
+	
+	RCC->AHB1ENR 	 |= RCC_AHB1ENR_GPIOEEN;
+	GPIOE->MODER 	 |= GPIO_MODER_MODE6_0;
+	GPIOE->OSPEEDR |= GPIO_OSPEEDR_OSPEED6_Msk;
+}
+
+void debug_UARTInit(void) {
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
 	USART1->BRR = debugBRR;
 	USART1->CR1 |= USART_CR1_UE | USART_CR1_TE;
-	
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
-	GPIOE->MODER 	 |= GPIO_MODER_MODE6_0;
-	GPIOE->OSPEEDR |= GPIO_OSPEEDR_OSPEED6_Msk;
-	printf("\n\n---------- Debug bootloader init Ok! Freeq = %dMHz, Brr = %d ----------\n", F_CPU / 1000000, debugBRR);
 }
+
+void debugInit(void) { // Инициализация отладки
+	debug_GPIOInit();
+	debug_UARTInit();
+	printf("\n\n---------- Debug bootloader init Ok! Freeq = %dMHz, USART1->BRR = %d ----------\n", F_CPU / 1000000, debugBRR);
+}
+
+void testPinOn(void)  { GPIOC->BSRR = GPIO_BSRR_BS9; }  
+void testPinOff(void) { GPIOC->BSRR = GPIO_BSRR_BR9; }  
 
 int fputc(int ch, FILE *f) {
 	debugSendStr((uint8_t *)&ch);
@@ -77,8 +83,8 @@ void printfArray32(uint32_t *addr, uint32_t count) {	// Функция выво�
 
 void testPinChange(void) {
 	if (GPIOE->ODR & GPIO_ODR_OD6) { 
-		testPinOff;
+		testPinOff();
 	} else {
-		testPinOn; 
+		testPinOn(); 
 	}
 }

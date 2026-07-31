@@ -1,10 +1,10 @@
 #ifndef  __DELAY_H
 #define __DELAY_H
 
-#include "main.h"
+#include <stdint.h>
 
-void _delay_us(uint64_t temp);
-void _delay_ms(uint64_t temp);
+void _delay_us(uint32_t temp);
+void _delay_ms(uint32_t temp);
 
 #endif 
 
